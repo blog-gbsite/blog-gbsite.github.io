@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/gb.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/gb.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/gb.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/gb.png?v=7.4.0" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="问题引入前两天需要写一个定时从产品库拿icon的定时任务，大体思路是遍历产品表，获得icon地址，请求到icon后，写到本地   刚开始采用一个一个写的方式，差不多要3.5s左右，之后改进成多线程方式，0.42s不得不说，对于IO操作频繁的任务，即使有GIL锁，多线程还是有很大的用武之地 不知这差不多10倍效率的提升会不会让你想试一试多线程">
+<meta name="keywords" content="python多线程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="python多线程">
+<meta property="og:url" content="http://gbsite.com/2019/10/07/multithreading/index.html">
+<meta property="og:site_name" content="G&amp;B小站">
+<meta property="og:description" content="问题引入前两天需要写一个定时从产品库拿icon的定时任务，大体思路是遍历产品表，获得icon地址，请求到icon后，写到本地   刚开始采用一个一个写的方式，差不多要3.5s左右，之后改进成多线程方式，0.42s不得不说，对于IO操作频繁的任务，即使有GIL锁，多线程还是有很大的用武之地 不知这差不多10倍效率的提升会不会让你想试一试多线程">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-10-07T15:46:35.539Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="python多线程">
+<meta name="twitter:description" content="问题引入前两天需要写一个定时从产品库拿icon的定时任务，大体思路是遍历产品表，获得icon地址，请求到icon后，写到本地   刚开始采用一个一个写的方式，差不多要3.5s左右，之后改进成多线程方式，0.42s不得不说，对于IO操作频繁的任务，即使有GIL锁，多线程还是有很大的用武之地 不知这差不多10倍效率的提升会不会让你想试一试多线程">
+  <link rel="canonical" href="http://gbsite.com/2019/10/07/multithreading/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>python多线程 | G&B小站</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">G&B小站</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-about">
+      
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://gbsite.com/2019/10/07/multithreading/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="G&B小站">
+      <meta itemprop="description" content="多一点代码，少一些偏见">
+      <meta itemprop="image" content="/images/youyou.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="G&B小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">python多线程
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-10-07 17:53:16 / 修改时间：23:46:35" itemprop="dateCreated datePublished" datetime="2019-10-07T17:53:16+08:00">2019-10-07</time>
+            </span>
+          
+            
+
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/python/" itemprop="url" rel="index"><span itemprop="name">python</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span id="/2019/10/07/multithreading/" class="post-meta-item leancloud_visitors" data-flag-title="python多线程" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="问题引入"><a href="#问题引入" class="headerlink" title="问题引入"></a>问题引入</h2><p>前两天需要写一个定时从产品库拿icon的定时任务，大体思路是遍历产品表，获得icon地址，请求到icon后，写到本地  </p>
+<p>刚开始采用一个一个写的方式，差不多要<strong>3.5s</strong>左右，之后改进成多线程方式，<strong>0.42s</strong><br>不得不说，对于IO操作频繁的任务，即使有<a href="https://zhuanlan.zhihu.com/p/20953544" target="_blank" rel="noopener">GIL锁</a>，多线程还是有很大的用武之地</p>
+<p><strong>不知这差不多10倍效率的提升会不会让你想试一试多线程</strong></p>
+<a id="more"></a>
+<h2 id="实例开锤"><a href="#实例开锤" class="headerlink" title="实例开锤"></a>实例开锤</h2><ul>
+<li>先找20张图片，下列图片都是我刚找到的，可以直接用</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"></span><br><span class="line">__author__ = <span class="string">'guozhuangzhi'</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> os, requests, threading, datetime</span><br><span class="line"><span class="keyword">import</span> multiprocessing</span><br><span class="line"></span><br><span class="line">IMAGE_LIST = [</span><br><span class="line">    <span class="string">f"https://ss2.bdstatic.com/70cFvnSh_Q1YnxGkpoWK1HF6hhy/it/u=2934236407,2961049037&amp;fm=26&amp;gp=0.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465501219&amp;di=4a9944a693d7f63a1b452b54764ae1d4&amp;imgtype=0&amp;src=http%3A%2F%2Fbpic.588ku.com%2Felement_origin_min_pic%2F00%2F86%2F89%2F8956ec576d4d7f5.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465501219&amp;di=05167939c016021ee64c482a17b4ed2b&amp;imgtype=0&amp;src=http%3A%2F%2Fku.90sjimg.com%2Felement_origin_min_pic%2F01%2F34%2F84%2F79573bc42e081c1.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465501218&amp;di=2d009a5deffc313fb9b3043ed8af8996&amp;imgtype=0&amp;src=http%3A%2F%2Fku.90sjimg.com%2Felement_origin_min_pic%2F01%2F35%2F29%2F95573bdcc0d4911.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465501218&amp;di=f5941ef741189d2a6f15ed997e90eaf7&amp;imgtype=0&amp;src=http%3A%2F%2Fku.90sjimg.com%2Felement_origin_min_pic%2F01%2F51%2F22%2F0857458398ca197.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465679658&amp;di=296a34d42f157f7e3db24dc263618623&amp;imgtype=0&amp;src=http%3A%2F%2Fbpic.588ku.com%2Felement_origin_min_pic%2F01%2F37%2F00%2F75573c359bb0413.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465679658&amp;di=6ade66ae1cb74d95678e93251230cf8e&amp;imgtype=0&amp;src=http%3A%2F%2Fpic.51yuansu.com%2Fpic3%2Fcover%2F01%2F18%2F96%2F59051eca0ce28_610.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465679658&amp;di=2d26c59e1c2524c2c8355c7cde141c4a&amp;imgtype=0&amp;src=http%3A%2F%2Fku.90sjimg.com%2Felement_origin_min_pic%2F01%2F61%2F16%2F575748bb238a078.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465679657&amp;di=c7c43a472971cf35dc9fb709382bb98c&amp;imgtype=0&amp;src=http%3A%2F%2Fpic.51yuansu.com%2Fpic3%2Fcover%2F03%2F59%2F49%2F5bd117b5f1b9f_610.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465679657&amp;di=564b2f07b5c2f3441546148f1939967c&amp;imgtype=0&amp;src=http%3A%2F%2Fbpic.588ku.com%2Felement_origin_min_pic%2F01%2F49%2F81%2F695744871999d35.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465679657&amp;di=5befd0a0b42858d324e7321f41d3e8a9&amp;imgtype=0&amp;src=http%3A%2F%2Fpic.51yuansu.com%2Fpic3%2Fcover%2F00%2F59%2F52%2F585670de3919d_610.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465679655&amp;di=05d934863a546ab107d08ace88b9f8fc&amp;imgtype=0&amp;src=http%3A%2F%2Fpic.51yuansu.com%2Fpic3%2Fcover%2F01%2F29%2F78%2F5923a89b0f13f_610.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465679655&amp;di=272c86015f8f6a9f40d5e63fe6536586&amp;imgtype=0&amp;src=http%3A%2F%2Fpic.51yuansu.com%2Fpic3%2Fcover%2F01%2F08%2F26%2F59019eb43c0b0_610.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465679655&amp;di=605b6f62623c7df022d00d9dbeaf779d&amp;imgtype=0&amp;src=http%3A%2F%2Fwww.51yuansu.com%2Fpic2%2Fcover%2F00%2F27%2F46%2F57feedfe9da75_610.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465679655&amp;di=85cd6d411cc78f66c425fe2e35799393&amp;imgtype=0&amp;src=http%3A%2F%2Fbpic.588ku.com%2Felement_origin_min_pic%2F01%2F46%2F75%2F28574323fd3a0c9.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465679654&amp;di=019d04d2d75a71f48d5762cac93c186e&amp;imgtype=0&amp;src=http%3A%2F%2Fku.90sjimg.com%2Felement_origin_min_pic%2F01%2F39%2F25%2F28573cb2f76d7c2.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465679653&amp;di=7c063d57b347a82c42510d66ef97def5&amp;imgtype=0&amp;src=http%3A%2F%2Fcdn.onlinewebfonts.com%2Fsvg%2Fimg_130804.png"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465679652&amp;di=0debd47055e036af6acb6f456b4862e5&amp;imgtype=0&amp;src=http%3A%2F%2Fpic.51yuansu.com%2Fpic3%2Fcover%2F02%2F24%2F67%2F59bf21cea685f_610.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465679652&amp;di=328058d16bc16fb0c21f78e68e1bcde8&amp;imgtype=0&amp;src=http%3A%2F%2Fbpic.588ku.com%2Felement_origin_min_pic%2F01%2F34%2F40%2F80573badbedbf82.jpg"</span>,</span><br><span class="line">    <span class="string">f"https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1570465679651&amp;di=6ecd67b285295e416de704d667ac835e&amp;imgtype=0&amp;src=http%3A%2F%2Fku.90sjimg.com%2Felement_origin_min_pic%2F01%2F55%2F26%2F7657475e35e437b.jpg"</span>,</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>图片找到之后我们先尝试使用<strong>常规方法</strong>来请求和写图片</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_icon_normal</span><span class="params">()</span>:</span></span><br><span class="line">    start_time = datetime.datetime.now()</span><br><span class="line">    image_folder = os.path.abspath(os.path.dirname(__file__))</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(len(IMAGE_LIST)):</span><br><span class="line">        r = requests.get(IMAGE_LIST[i])</span><br><span class="line">        print(<span class="string">'request use:'</span>, datetime.datetime.now() - start_time)</span><br><span class="line">        <span class="keyword">with</span> open(<span class="string">f"<span class="subst">&#123;image_folder&#125;</span>/icon_<span class="subst">&#123;i+<span class="number">100</span>&#125;</span>.jpg"</span>, <span class="string">"wb"</span>) <span class="keyword">as</span> f:</span><br><span class="line">            f.write(r.content)</span><br><span class="line">    end_time = datetime.datetime.now()</span><br><span class="line">    print(<span class="string">f"Normal finished in <span class="subst">&#123;end_time-start_time&#125;</span>"</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">	get_icon_normal()</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>最后得到的结果是：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">/usr/local/bin/python3 /Users/guozhuangzhi/Desktop/demo/multithreading-demo.py</span><br><span class="line">request use: 0:00:00.078921</span><br><span class="line">request use: 0:00:00.077258</span><br><span class="line">request use: 0:00:00.052976</span><br><span class="line">request use: 0:00:00.058743</span><br><span class="line">request use: 0:00:00.051850</span><br><span class="line">request use: 0:00:00.055852</span><br><span class="line">request use: 0:00:00.055807</span><br><span class="line">request use: 0:00:00.058435</span><br><span class="line">request use: 0:00:00.061770</span><br><span class="line">request use: 0:00:00.059353</span><br><span class="line">request use: 0:00:00.061592</span><br><span class="line">request use: 0:00:00.059754</span><br><span class="line">request use: 0:00:00.050732</span><br><span class="line">request use: 0:00:00.054183</span><br><span class="line">request use: 0:00:00.056879</span><br><span class="line">request use: 0:00:00.054976</span><br><span class="line">request use: 0:00:00.055218</span><br><span class="line">request use: 0:00:00.056181</span><br><span class="line">request use: 0:00:00.057931</span><br><span class="line">request use: 0:00:00.060464</span><br><span class="line">Normal finished in 0:00:01.185754</span><br><span class="line"></span><br><span class="line">Process finished with exit code 0</span><br></pre></td></tr></table></figure>
+
+<p>可以看到每个请求大概用到<strong>0.06-0.08s</strong>的时间，而完成这些写图片的操作总共使用了大概<strong>1.18s</strong>的时间</p>
+<ul>
+<li>那么如果我们采用多线程的方法，完成同样的操作需要多久的时间呢</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># target函数（每个线程所执行的操作）</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_icon_multi</span><span class="params">(i)</span>:</span></span><br><span class="line">    start_time = datetime.datetime.now()</span><br><span class="line">    image_folder = os.path.abspath(os.path.dirname(__file__))</span><br><span class="line">    r = requests.get(IMAGE_LIST[i])</span><br><span class="line">    print(<span class="string">'request use:'</span>,datetime.datetime.now()-start_time)</span><br><span class="line">    <span class="comment"># print(r.content)</span></span><br><span class="line">    <span class="keyword">with</span> open(<span class="string">f"<span class="subst">&#123;image_folder&#125;</span>/icon_<span class="subst">&#123;i&#125;</span>.png"</span>, <span class="string">"wb"</span>) <span class="keyword">as</span> f:</span><br><span class="line">        f.write(r.content)</span><br><span class="line">        </span><br><span class="line"><span class="comment"># 线程控制函数</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">multithreading_build</span><span class="params">()</span>:</span></span><br><span class="line">    start_time = datetime.datetime.now()</span><br><span class="line">    threads = []</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(len(IMAGE_LIST)):</span><br><span class="line">        t = threading.Thread(target=get_icon_multi, args=(i,))</span><br><span class="line">        t.start()</span><br><span class="line">        threads.append(t)</span><br><span class="line">    <span class="keyword">for</span> thread <span class="keyword">in</span> threads:</span><br><span class="line">        thread.join()</span><br><span class="line">    end_time = datetime.datetime.now()</span><br><span class="line">    print(<span class="string">f"Multithreading finished in <span class="subst">&#123;end_time - start_time&#125;</span>"</span>)</span><br><span class="line">    </span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    multithreading_build()</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>采用多线程最终得到的结果：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">/usr/local/bin/python3 /Users/guozhuangzhi/Desktop/demo/multithreading-demo.py</span><br><span class="line">request use: 0:00:00.072402</span><br><span class="line">request use: 0:00:00.084998</span><br><span class="line">request use: 0:00:00.084134</span><br><span class="line">request use: 0:00:00.095861</span><br><span class="line">request use: 0:00:00.093564</span><br><span class="line">request use: 0:00:00.104934</span><br><span class="line">request use: 0:00:00.106396</span><br><span class="line">request use: 0:00:00.102883</span><br><span class="line">request use: 0:00:00.109734</span><br><span class="line">request use: 0:00:00.110612</span><br><span class="line">request use: 0:00:00.106433</span><br><span class="line">request use: 0:00:00.122061</span><br><span class="line">request use: 0:00:00.120571</span><br><span class="line">request use: 0:00:00.117011</span><br><span class="line">request use: 0:00:00.126690</span><br><span class="line">request use: 0:00:00.125776</span><br><span class="line">request use: 0:00:00.136692</span><br><span class="line">request use: 0:00:00.124360</span><br><span class="line">request use: 0:00:00.134398</span><br><span class="line">request use: 0:00:00.143441</span><br><span class="line">Multithreading finished in 0:00:00.167354</span><br><span class="line"></span><br><span class="line">Process finished with exit code 0</span><br></pre></td></tr></table></figure>
+
+<p>每次请求的时间大概是<strong>0.8-0.14s</strong>，最终所用时间为<strong>0.16s</strong>  </p>
+<p>so，既然多线程对于读写文件能够节约如此多的时间，何不拿来一用？  </p>
+<p><strong>那么如何来用多线程呢，您先别急，请接着看</strong></p>
+<h2 id="代码分析"><a href="#代码分析" class="headerlink" title="代码分析"></a>代码分析</h2><p>常规的方法我们就不说了，主要来看线程部分的两个函数，也就是<strong>target函数</strong>和<strong>线程控制函数</strong>  </p>
+<p>其中<strong>target函数</strong>是每一个线程所要执行的任务，在这里，我们每个线程要执行的任务就是先用get方法请求图片，之后将图片写到本地，每一个线程都执行同样的操作，我们可以带一个参数 i 来控制请求哪张图片，线程 i 请求的是 IMAGE_LIST[i]   </p>
+<p>关键点还是在<strong>线程控制函数</strong>  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">threads = []</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> range(len(IMAGE_LIST)):</span><br><span class="line">       t = threading.Thread(target=get_icon_multi, args=(i,))</span><br><span class="line">       t.start()</span><br><span class="line">       threads.append(t)</span><br><span class="line"><span class="keyword">for</span> thread <span class="keyword">in</span> threads:</span><br><span class="line">       thread.join()</span><br></pre></td></tr></table></figure>
+
+<p>上述代码中，我们每次先实例化一个Thread类，实例化时指定了该线程要执行的target函数，以及所带参数<strong>（这里注意，如果只有一个参数，则参数后面需要加“，”，两个及以上最后不需要加逗号）</strong>，之后我们start了该线程，这时候操作系统应该开始创建新线程并且执行，但主程序并不会等这个线程执行完，而是直接进入for循环的下一次执行，创建下一个线程  </p>
+<p><strong>join()函数是让一个线程等待另一个线程的完成</strong>，在这里是为了让主线程阻塞，等每一个子线程都执行完毕之后才继续执行，如果没有下面这个for的话，你可能会得一种可能的情况：  </p>
+<p>主线程先执行完，即你已经看到了“Multithreading finished in 0:00:00.167354“，但是之后会出现“request use: 0:00:00.143441”这种情况。因为执行main()的主线程并没有等待所有线程都执行完，就直接往下执行了。</p>
+<p>所以这里第二个for就是为了等待所有子线程结束，之后主线程再继续往下执行</p>
+<h2 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h2><p>程序中的20个图片均是很小的icon图片，为什么要采用icon图呢，因为多线程应该会共享网络带宽（本人猜测）</p>
+<p>我曾经做过多线程下载较大内容的任务，但是效果并不理想，因为当下载较大文件时，很可能3-4个线程就把带宽共享完了或者网速匀给20个线程，那么这时多线程效果并不明显，和一个一个下载效果差不了太多。</p>
+<p>那意思是只能请求icon？当然不是，通过上面的介绍，你应该掌握了多线程的使用方法。至于怎么来用，你说了算。你也可以多线程往excel表格中写内容，只要是IO密集型任务，多线程拿手的很。当然，如果你要写excel表格的话，还需要每次写的时候对表格加锁，有没有感觉，操作系统里学的东西还是有点意思的？</p>
+<h2 id="疑问"><a href="#疑问" class="headerlink" title="疑问"></a>疑问</h2><p>不知道你是否有这样的疑问，如果在一个不知道规模的情况下，采用如上的方法来创建和使用线程，那么万一规模很大，导致线程栈满了怎么办？</p>
+<p>这就需要<strong>线程池</strong>了，我们可以将所有的任务加到一个Queue中，只启用5个线程去执行Queue中的任务，这样就可以避免线程栈爆了，那如何实现一个线程池呢？请看下回分解</p>
+
+    </div>
+
+    
+    
+    
+        
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/python多线程/" rel="tag"><i class="fa fa-tag"></i> python多线程</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/09/21/ThanksForTheWebsite/" rel="next" title="Thanks">
+                  <i class="fa fa-chevron-left"></i> Thanks
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    <div class="comments" id="gitalk-container"></div>
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#问题引入"><span class="nav-number">1.</span> <span class="nav-text">问题引入</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实例开锤"><span class="nav-number">2.</span> <span class="nav-text">实例开锤</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#代码分析"><span class="nav-number">3.</span> <span class="nav-text">代码分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#说明"><span class="nav-number">4.</span> <span class="nav-text">说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#疑问"><span class="nav-number">5.</span> <span class="nav-text">疑问</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/youyou.jpg"
+      alt="G&B小站">
+  <p class="site-author-name" itemprop="name">G&B小站</p>
+  <div class="site-description" itemprop="description">多一点代码，少一些偏见</div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">G&B小站</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.4.0</div>
+
+        
+
+
+
+
+
+
+  
+  <script>
+  function leancloudSelector(url) {
+    return document.getElementById(url).querySelector('.leancloud-visitors-count');
+  }
+  if (CONFIG.page.isPost) {
+    function addCount(Counter) {
+      var visitors = document.querySelector('.leancloud_visitors');
+      var url = visitors.getAttribute('id').trim();
+      var title = visitors.getAttribute('data-flag-title').trim();
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length > 0) {
+            var counter = results[0];
+              leancloudSelector(url).innerText = counter.time + 1;
+            
+            Counter('put', '/classes/Counter/' + counter.objectId, { time: { '__op': 'Increment', 'amount': 1 } })
+              .then(response => response.json())
+              .catch(error => {
+                console.log('Failed to save visitor count', error);
+              })
+          } else {
+              leancloudSelector(url).innerText = 'Counter not initialized! More info at console err msg.';
+              console.error('ATTENTION! LeanCloud counter has security bug, see how to solve it here: https://github.com/theme-next/hexo-leancloud-counter-security. \n However, you can still use LeanCloud without security, by setting `security` option to `false`.');
+            
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  } else {
+    function showTime(Counter) {
+      var visitors = document.querySelectorAll('.leancloud_visitors');
+      var entries = [...visitors].map(element => {
+        return element.getAttribute('id').trim();
+      });
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url: { '$in': entries } })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length === 0) {
+            document.querySelectorAll('.leancloud_visitors .leancloud-visitors-count').forEach(element => {
+              element.innerText = 0;
+            });
+            return;
+          }
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.url;
+            var time = item.time;
+            leancloudSelector(url).innerText = time;
+          }
+          for (var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = leancloudSelector(url);
+            if (element.innerText == '') {
+              element.innerText = 0;
+            }
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  }
+
+  fetch('https://app-router.leancloud.cn/2/route?appId=CJ1ld0z5U261newntFU1f2hy-gzGzoHsz')
+    .then(response => response.json())
+    .then(({ api_server }) => {
+      var Counter = (method, url, data) => {
+        return fetch(`https://${api_server}/1.1${url}`, {
+          method: method,
+          headers: {
+            'X-LC-Id': 'CJ1ld0z5U261newntFU1f2hy-gzGzoHsz',
+            'X-LC-Key': 'Xc15iDfWPayCOsCzmHGhzsgJ',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+      };
+      if (CONFIG.page.isPost) {
+        const localhost = /http:\/\/(localhost|127.0.0.1|0.0.0.0)/;
+        if (localhost.test(document.URL)) return;
+        addCount(Counter);
+      } else if (document.querySelectorAll('.post-title-link').length >= 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+<script src="/js/next-boot.js?v=7.4.0"></script>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID: 'f47586b90bd0283b053a',
+      clientSecret: '4c03799ca8824c0da0e647c58008c742e6e94255',
+      repo: 'blog-gbsite.github.io',
+      owner: 'blog-gbsite',
+      admin: ['blog-gbsite'],
+      id: 'dee672b171ff48e5e5c886c27c220eb7',
+        language: window.navigator.language || window.navigator.userLanguage,
+      
+      distractionFreeMode: 'true'
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+</script>
+
+</body>
+</html>
