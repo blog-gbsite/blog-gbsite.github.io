@@ -255,7 +255,7 @@
                 
               
 
-              <time title="创建时间：2020-01-07 14:16:44 / 修改时间：14:48:44" itemprop="dateCreated datePublished" datetime="2020-01-07T14:16:44+08:00">2020-01-07</time>
+              <time title="创建时间：2020-01-07 14:16:44 / 修改时间：14:59:20" itemprop="dateCreated datePublished" datetime="2020-01-07T14:16:44+08:00">2020-01-07</time>
             </span>
           
             
@@ -297,37 +297,15 @@
       
           <h1 id="git笔记"><a href="#git笔记" class="headerlink" title="git笔记"></a>git笔记</h1><h2 id="git-rebase"><a href="#git-rebase" class="headerlink" title="git rebase"></a>git rebase</h2><h3 id="适合使用的时机"><a href="#适合使用的时机" class="headerlink" title="适合使用的时机"></a>适合使用的时机</h3><p><strong>多人开发同一个分支的时候，rebase可以使提交历史简洁</strong><br>例如经过多次提交的 dev分支，可以经过rebase之后merge到master上，rebase之前(可见下文git revert所示图) </p>
 <p><img src="http://blog-gbsite-1300380611.cos-website.ap-beijing.myqcloud.com/git_4.png" alt="git_5"></p>
-<p>之后可以 <code>git rebase -i HEAD~9</code>(~9是指HEAD的第9个祖先提交，<strong>那么^与～有什么区别呢？详情请看参考资料链接4</strong>)，<code>-i</code>采用交互模式  </p>
-<p><img src="http://blog-gbsite-1300380611.cos-website.ap-beijing.myqcloud.com/git_6.png" alt="git_6"></p>
-<p>之后我们pick要保留的commit_message，将之后的commits <strong>squash</strong> （bug fix可以通过fixup来丢弃message, reword可以重新编辑message等），然后保存编辑，之后的页面也保存一下,如果看到successfully你就成功了；如果没成功？！自己去查查，顺便了解一下，我在这偷个懒哈。</p>
-<p>最后，我们的dev分支变成了这个样子：</p>
-<p><img src="http://blog-gbsite-1300380611.cos-website.ap-beijing.myqcloud.com/git_5.png" alt="git_5"></p>
-<h3 id="必须注意的地方"><a href="#必须注意的地方" class="headerlink" title="必须注意的地方"></a>必须注意的地方</h3><p>在rebase其他分支时，要保证没有人基于当前的分支进行开发<br><strong>因为rebase相当于将分支拉下来，之后再把自己的commit  cherry-pick到拉下的分支上，详情可见参考资料链接2</strong></p>
-<h2 id="git-reset"><a href="#git-reset" class="headerlink" title="git reset"></a>git reset</h2><h3 id="hard"><a href="#hard" class="headerlink" title="hard"></a>hard</h3><ol>
-<li>git reset –<strong>hard</strong> HEAD : 将当前状态重置到与HEAD所指的提交，与HEAD所指提交状态一模一样（不保留任何工作区和暂存区的数据）</li>
-<li>git fetch ; git reset –hard origin/dev : 将当前分支重置到远端最新dev的状态  </li>
-</ol>
-<h3 id="soft"><a href="#soft" class="headerlink" title="soft"></a>soft</h3><p>git reset –<strong>soft</strong> dev~1 : 工作区和暂存区不变，在f/table～1之后的提交，都进入暂存区</p>
-<h3 id="mixed"><a href="#mixed" class="headerlink" title="mixed"></a>mixed</h3><p>git reset –<strong>mixed</strong> dev~1 : 工作区不变，在f/table～1之后的提交和暂存区的内容，都进入工作区</p>
-<h3 id="合并提交-合并-2-3-4"><a href="#合并提交-合并-2-3-4" class="headerlink" title="合并提交(合并 2 3 4)"></a>合并提交(合并 2 3 4)</h3><p>(dev~3) 1 – 2 – 3 – 4<br>git reset –soft dev~3 ; git commit -m “修改balabala”<br><strong>注意:这仍然是一种修改提交历史的行为，不在协作分支上做这样的操作</strong>  </p>
-<h3 id="丢弃"><a href="#丢弃" class="headerlink" title="丢弃"></a>丢弃</h3><ol>
-<li>丢弃工作区：git checkout </li>
-<li>暂存区退回到工作区： git reset</li>
-<li>连工作区带暂存区一起丢弃： git reset –hard</li>
-</ol>
-<h2 id="git-revert"><a href="#git-revert" class="headerlink" title="git revert"></a>git revert</h2><p>git revert [commitId] 即可撤销相应commitId的修改（只能撤销一个commit）  </p>
-<h3 id="如果需要撤销多个commit呢（revert多个版本）？"><a href="#如果需要撤销多个commit呢（revert多个版本）？" class="headerlink" title="如果需要撤销多个commit呢（revert多个版本）？"></a>如果需要撤销多个commit呢（revert多个版本）？</h3><p>多个commit的情况：<br>    a. git revert [old_commit]^..[new_commit]   最后的提交历史: 1–2–3–3’–2’<br>    b. git revert -n [old_commit]^..[new_commit]; git commit -m “revert”  最后的提交历史: 1–2–3–r23’  </p>
-<h3 id="如果revert的是个merge结点的commit呢？"><a href="#如果revert的是个merge结点的commit呢？" class="headerlink" title="如果revert的是个merge结点的commit呢？"></a>如果revert的是个merge结点的commit呢？</h3><p><img src="http://blog-gbsite-1300380611.cos-website.ap-beijing.myqcloud.com/merge_commit.png" alt="merge_commit"><br>如上图所示，结点5是一个merge commit, 那么当revert 5 的时候会出现什么情况呢？<br><img src="http://blog-gbsite-1300380611.cos-website.ap-beijing.myqcloud.com/git_2.png" alt="git_2">  </p>
-<p>stack overflow上有相关的解释<br>“The -m option specifies the parent number. This is because a merge commit has more than one parent, and Git does not know automatically which parent was the mainline, and which parent was the branch you want to un-merge.”</p>
-<p><strong>总的来说就是在对merge commit进行revert时由于有多个parent commit，git不知道哪个parent是主线，哪个是要取消合并的分支</strong>  </p>
-<p><img src="http://blog-gbsite-1300380611.cos-website.ap-beijing.myqcloud.com/git_3.png" alt="git_3"></p>
-<p>我们可以使用git log可以看到合并历史  </p>
-<blockquote>
-<p>Merge: 6c000c5 0f9a860</p>
-</blockquote>
-<p>之后可以使用<code>git revert -m 1 0a92bc9</code> <strong>1</strong>代表<code>6c000c5</code>， <strong>2</strong>代表<code>0f9a860</code>来选择希望保留的父分支，这里我们选择了dev父分支来进行保留</p>
-<h2 id="参考资料："><a href="#参考资料：" class="headerlink" title="参考资料："></a>参考资料：</h2><p><a href="https://blog.csdn.net/hongchangfirst/article/details/80986597" target="_blank" rel="noopener">三分钟教你学Git(二十六) revert多个提交</a><br><a href="http://easinote.seewo.com/linkShare?id=1cb22986dec84659961be184ac9071e7&platform=enpc&channel=copylink" target="_blank" rel="noopener">Git 进阶 - 从使用角度深入理解Git</a><br><a href="https://stackoverflow.com/questions/7099833/how-to-revert-a-merge-commit-thats-already-pushed-to-remote-branch" target="_blank" rel="noopener">How to revert a merge commit that’s already pushed to remote branch?</a><br><a href="https://scarletsky.github.io/2016/12/29/tilde-and-caret-in-git/" target="_blank" rel="noopener">Git 中的 ~ 和 ^</a></p>
-
+          <!--noindex-->
+          
+            <div class="post-button text-center">
+              <a class="btn" href="/2020/01/07/git_1/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          
+          <!--/noindex-->
         
       
     </div>

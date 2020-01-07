@@ -55,13 +55,13 @@
   };
 </script>
 
-  <meta name="description" content="git笔记git rebase适合使用的时机多人开发同一个分支的时候，rebase可以使提交历史简洁例如经过多次提交的 dev分支，可以经过rebase之后merge到master上，rebase之前(可见下文git revert所示图)   之后可以 git rebase -i HEAD~9(~9是指HEAD的第9个祖先提交，那么^与～有什么区别呢？详情请看参考资料链接4)，-i采用交互模式">
+  <meta name="description" content="git笔记git rebase适合使用的时机多人开发同一个分支的时候，rebase可以使提交历史简洁例如经过多次提交的 dev分支，可以经过rebase之后merge到master上，rebase之前(可见下文git revert所示图)">
 <meta name="keywords" content="git">
 <meta property="og:type" content="article">
 <meta property="og:title" content="git笔记">
 <meta property="og:url" content="http://gbsite.com/2020/01/07/git_1/index.html">
 <meta property="og:site_name" content="G&amp;B小站">
-<meta property="og:description" content="git笔记git rebase适合使用的时机多人开发同一个分支的时候，rebase可以使提交历史简洁例如经过多次提交的 dev分支，可以经过rebase之后merge到master上，rebase之前(可见下文git revert所示图)   之后可以 git rebase -i HEAD~9(~9是指HEAD的第9个祖先提交，那么^与～有什么区别呢？详情请看参考资料链接4)，-i采用交互模式">
+<meta property="og:description" content="git笔记git rebase适合使用的时机多人开发同一个分支的时候，rebase可以使提交历史简洁例如经过多次提交的 dev分支，可以经过rebase之后merge到master上，rebase之前(可见下文git revert所示图)">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://blog-gbsite-1300380611.cos-website.ap-beijing.myqcloud.com/git_4.png">
 <meta property="og:image" content="http://blog-gbsite-1300380611.cos-website.ap-beijing.myqcloud.com/git_6.png">
@@ -69,10 +69,10 @@
 <meta property="og:image" content="http://blog-gbsite-1300380611.cos-website.ap-beijing.myqcloud.com/merge_commit.png">
 <meta property="og:image" content="http://blog-gbsite-1300380611.cos-website.ap-beijing.myqcloud.com/git_2.png">
 <meta property="og:image" content="http://blog-gbsite-1300380611.cos-website.ap-beijing.myqcloud.com/git_3.png">
-<meta property="og:updated_time" content="2020-01-07T06:48:44.180Z">
+<meta property="og:updated_time" content="2020-01-07T06:59:20.983Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="git笔记">
-<meta name="twitter:description" content="git笔记git rebase适合使用的时机多人开发同一个分支的时候，rebase可以使提交历史简洁例如经过多次提交的 dev分支，可以经过rebase之后merge到master上，rebase之前(可见下文git revert所示图)   之后可以 git rebase -i HEAD~9(~9是指HEAD的第9个祖先提交，那么^与～有什么区别呢？详情请看参考资料链接4)，-i采用交互模式">
+<meta name="twitter:description" content="git笔记git rebase适合使用的时机多人开发同一个分支的时候，rebase可以使提交历史简洁例如经过多次提交的 dev分支，可以经过rebase之后merge到master上，rebase之前(可见下文git revert所示图)">
 <meta name="twitter:image" content="http://blog-gbsite-1300380611.cos-website.ap-beijing.myqcloud.com/git_4.png">
   <link rel="canonical" href="http://gbsite.com/2020/01/07/git_1/">
 
@@ -264,7 +264,7 @@
                 
               
 
-              <time title="创建时间：2020-01-07 14:16:44 / 修改时间：14:48:44" itemprop="dateCreated datePublished" datetime="2020-01-07T14:16:44+08:00">2020-01-07</time>
+              <time title="创建时间：2020-01-07 14:16:44 / 修改时间：14:59:20" itemprop="dateCreated datePublished" datetime="2020-01-07T14:16:44+08:00">2020-01-07</time>
             </span>
           
             
@@ -306,7 +306,8 @@
       
         <h1 id="git笔记"><a href="#git笔记" class="headerlink" title="git笔记"></a>git笔记</h1><h2 id="git-rebase"><a href="#git-rebase" class="headerlink" title="git rebase"></a>git rebase</h2><h3 id="适合使用的时机"><a href="#适合使用的时机" class="headerlink" title="适合使用的时机"></a>适合使用的时机</h3><p><strong>多人开发同一个分支的时候，rebase可以使提交历史简洁</strong><br>例如经过多次提交的 dev分支，可以经过rebase之后merge到master上，rebase之前(可见下文git revert所示图) </p>
 <p><img src="http://blog-gbsite-1300380611.cos-website.ap-beijing.myqcloud.com/git_4.png" alt="git_5"></p>
-<p>之后可以 <code>git rebase -i HEAD~9</code>(~9是指HEAD的第9个祖先提交，<strong>那么^与～有什么区别呢？详情请看参考资料链接4</strong>)，<code>-i</code>采用交互模式  </p>
+<a id="more"></a>
+<p>之后可以 <code>git rebase -i HEAD~9</code>(~9是指HEAD的第9个祖先提交，<strong>如果想知道^与～的区别？请移步参考资料链接4</strong>)，<code>-i</code>采用交互模式  </p>
 <p><img src="http://blog-gbsite-1300380611.cos-website.ap-beijing.myqcloud.com/git_6.png" alt="git_6"></p>
 <p>之后我们pick要保留的commit_message，将之后的commits <strong>squash</strong> （bug fix可以通过fixup来丢弃message, reword可以重新编辑message等），然后保存编辑，之后的页面也保存一下,如果看到successfully你就成功了；如果没成功？！自己去查查，顺便了解一下，我在这偷个懒哈。</p>
 <p>最后，我们的dev分支变成了这个样子：</p>
