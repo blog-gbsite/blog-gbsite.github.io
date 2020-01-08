@@ -56,14 +56,14 @@
 </script>
 
   <meta name="description" content="问题引入前两天需要写一个定时从产品库拿icon的定时任务，大体思路是遍历产品表，获得icon地址，请求到icon后，写到本地   刚开始采用一个一个写的方式，差不多要3.5s左右，之后改进成多线程方式，0.42s不得不说，对于IO操作频繁的任务，即使有GIL锁，多线程还是有很大的用武之地 不知这差不多10倍效率的提升会不会让你想试一试多线程">
-<meta name="keywords" content="python多线程">
+<meta name="keywords" content="python,多线程">
 <meta property="og:type" content="article">
 <meta property="og:title" content="python多线程">
 <meta property="og:url" content="http://gbsite.com/2019/10/07/multithreading/index.html">
 <meta property="og:site_name" content="G&amp;B小站">
 <meta property="og:description" content="问题引入前两天需要写一个定时从产品库拿icon的定时任务，大体思路是遍历产品表，获得icon地址，请求到icon后，写到本地   刚开始采用一个一个写的方式，差不多要3.5s左右，之后改进成多线程方式，0.42s不得不说，对于IO操作频繁的任务，即使有GIL锁，多线程还是有很大的用武之地 不知这差不多10倍效率的提升会不会让你想试一试多线程">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-10-07T15:54:53.246Z">
+<meta property="og:updated_time" content="2020-01-08T13:08:07.167Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="python多线程">
 <meta name="twitter:description" content="问题引入前两天需要写一个定时从产品库拿icon的定时任务，大体思路是遍历产品表，获得icon地址，请求到icon后，写到本地   刚开始采用一个一个写的方式，差不多要3.5s左右，之后改进成多线程方式，0.42s不得不说，对于IO操作频繁的任务，即使有GIL锁，多线程还是有很大的用武之地 不知这差不多10倍效率的提升会不会让你想试一试多线程">
@@ -257,11 +257,19 @@
                 
               
 
-              <time title="创建时间：2019-10-07 17:53:16 / 修改时间：23:54:53" itemprop="dateCreated datePublished" datetime="2019-10-07T17:53:16+08:00">2019-10-07</time>
+              <time title="创建时间：2019-10-07 17:53:16" itemprop="dateCreated datePublished" datetime="2019-10-07T17:53:16+08:00">2019-10-07</time>
             </span>
           
             
 
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-01-08 21:08:07" itemprop="dateModified" datetime="2020-01-08T21:08:07+08:00">2020-01-08</time>
+              </span>
             
           
             <span class="post-meta-item">
@@ -355,7 +363,9 @@
           
           <div class="post-tags">
             
-              <a href="/tags/python多线程/" rel="tag"><i class="fa fa-tag"></i> python多线程</a>
+              <a href="/tags/python/" rel="tag"><i class="fa fa-tag"></i> python</a>
+            
+              <a href="/tags/多线程/" rel="tag"><i class="fa fa-tag"></i> 多线程</a>
             
           </div>
         
@@ -447,7 +457,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-count">4</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -473,7 +483,7 @@
             <a href="/tags/">
           
         
-        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
