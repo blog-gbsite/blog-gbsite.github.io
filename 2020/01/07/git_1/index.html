@@ -69,7 +69,7 @@
 <meta property="og:image" content="http://blog-gbsite-1300380611.cos-website.ap-beijing.myqcloud.com/merge_commit.png">
 <meta property="og:image" content="http://blog-gbsite-1300380611.cos-website.ap-beijing.myqcloud.com/git_2.png">
 <meta property="og:image" content="http://blog-gbsite-1300380611.cos-website.ap-beijing.myqcloud.com/git_3.png">
-<meta property="og:updated_time" content="2020-01-07T06:59:20.983Z">
+<meta property="og:updated_time" content="2020-01-16T07:56:51.961Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="git笔记">
 <meta name="twitter:description" content="git笔记git rebase适合使用的时机多人开发同一个分支的时候，rebase可以使提交历史简洁例如经过多次提交的 dev分支，可以经过rebase之后merge到master上，rebase之前(可见下文git revert所示图)">
@@ -264,11 +264,19 @@
                 
               
 
-              <time title="创建时间：2020-01-07 14:16:44 / 修改时间：14:59:20" itemprop="dateCreated datePublished" datetime="2020-01-07T14:16:44+08:00">2020-01-07</time>
+              <time title="创建时间：2020-01-07 14:16:44" itemprop="dateCreated datePublished" datetime="2020-01-07T14:16:44+08:00">2020-01-07</time>
             </span>
           
             
 
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-01-16 15:56:51" itemprop="dateModified" datetime="2020-01-16T15:56:51+08:00">2020-01-16</time>
+              </span>
             
           
             <span class="post-meta-item">
@@ -317,8 +325,8 @@
 <li>git reset –<strong>hard</strong> HEAD : 将当前状态重置到与HEAD所指的提交，与HEAD所指提交状态一模一样（不保留任何工作区和暂存区的数据）</li>
 <li>git fetch ; git reset –hard origin/dev : 将当前分支重置到远端最新dev的状态  </li>
 </ol>
-<h3 id="soft"><a href="#soft" class="headerlink" title="soft"></a>soft</h3><p>git reset –<strong>soft</strong> dev~1 : 工作区和暂存区不变，在f/table～1之后的提交，都进入暂存区</p>
-<h3 id="mixed"><a href="#mixed" class="headerlink" title="mixed"></a>mixed</h3><p>git reset –<strong>mixed</strong> dev~1 : 工作区不变，在f/table～1之后的提交和暂存区的内容，都进入工作区</p>
+<h3 id="soft"><a href="#soft" class="headerlink" title="soft"></a>soft</h3><p>git reset –<strong>soft</strong> dev~1 : 工作区和暂存区不变，在dev～1之后的提交，都进入暂存区</p>
+<h3 id="mixed"><a href="#mixed" class="headerlink" title="mixed"></a>mixed</h3><p>git reset –<strong>mixed</strong> dev~1 : 工作区不变，在dev～1之后的提交和暂存区的内容，都进入工作区</p>
 <h3 id="合并提交-合并-2-3-4"><a href="#合并提交-合并-2-3-4" class="headerlink" title="合并提交(合并 2 3 4)"></a>合并提交(合并 2 3 4)</h3><p>(dev~3) 1 – 2 – 3 – 4<br>git reset –soft dev~3 ; git commit -m “修改balabala”<br><strong>注意:这仍然是一种修改提交历史的行为，不在协作分支上做这样的操作</strong>  </p>
 <h3 id="丢弃"><a href="#丢弃" class="headerlink" title="丢弃"></a>丢弃</h3><ol>
 <li>丢弃工作区：git checkout </li>
@@ -444,7 +452,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-count">5</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -457,7 +465,7 @@
             <a href="/categories/">
           
         
-        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-count">3</span>
         <span class="site-state-item-name">分类</span>
         </a>
       </div>
@@ -470,7 +478,7 @@
             <a href="/tags/">
           
         
-        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-count">5</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>

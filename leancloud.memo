@@ -7,4 +7,5 @@
 {"title":"Hello World","url":"/2019/09/21/hello-world/"},
 {"title":"python多线程","url":"/2019/10/07/multithreading/"},
 {"title":"git笔记","url":"/2020/01/07/git_1/"},
+{"title":"Python多线程——线程池","url":"/2020/01/08/multithreading-pool/"},
 ]
